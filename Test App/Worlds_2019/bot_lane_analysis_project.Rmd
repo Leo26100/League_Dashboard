@@ -1,120 +1,14 @@
 ---
-title: "Untitled"
+title: "Bot Lane Analysis"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(fig.width=15, fig.height=8) 
-suppressWarnings(library(rvest))
-suppressWarnings(library(httr))
-suppressWarnings(library(tidyverse))
-suppressWarnings(library(dplyr))
-suppressWarnings(library(shiny))
-suppressWarnings(library(shinydashboard))
+knitr::opts_chunk$set(fig.width=15, fig.height=8)
 
-#Worlds match history----
-MatchHistory_url <- "https://lol.gamepedia.com/index.php?pfRunQueryFormName=MatchHistoryGame&title=Special%3ARunQuery%2FMatchHistoryGame&MHG%5Bpreload%5D=Tournament&MHG%5Btournament%5D=2019+Season+World+Championship%2FMain+Event&MHG%5Bteam%5D=&MHG%5Bteam1%5D=&MHG%5Bteam2%5D=&MHG%5Bban%5D=&MHG%5Brecord%5D=&MHG%5Bascending%5D%5Bis_checkbox%5D=true&MHG%5Blimit%5D=77&MHG%5Bwhere%5D=&MHG%5Btextonly%5D%5Bis_checkbox%5D=true&MHG%5Btextonly%5D%5Bvalue%5D=1&wpRunQuery=Run+query&pf_free_text="
-
-MatchHistory_html <- read_html(MatchHistory_url)
-
-MatchHistory_nonTidy_df <- html_table(MatchHistory_html, fill = TRUE)
-
-MatchHistory_nonTidy_df <- MatchHistory_nonTidy_df[1] %>%
-  as.data.frame()
-MatchHistory_ColumnNames <- MatchHistory_nonTidy_df[1,]
-names(MatchHistory_nonTidy_df) <- MatchHistory_ColumnNames 
-
-MatchHistory_nonTidy_df <- MatchHistory_nonTidy_df[3:length(MatchHistory_nonTidy_df$Date),] %>%
-  rowid_to_column("ID")
-
-#Worlds Pick and Ban------
-xpath_pbh = "//*[@id='pbh-table']"
-PickandBan_url <- "https://lol.gamepedia.com/Special:RunQuery/PickBanHistory?PBH%5Bpage%5D=Worlds%202019%20Main%20Event&PBH%5Btextonly%5D=Yes&pfRunQueryFormName=PickBanHistory"
-
-PickandBan_html <- read_html(PickandBan_url)
-
-PickandBan_df <- html_node(PickandBan_html, xpath = xpath_pbh)
-
-PickandBan_df_non_tidy <- html_table(PickandBan_df, header = FALSE)
-
-names <- PickandBan_df_non_tidy[2,]
-
-names(PickandBan_df_non_tidy) <- names
-
-PickandBan_df_non_tidy <- PickandBan_df_non_tidy[3:length(PickandBan_df_non_tidy$Phase),]%>%
-  as_tibble() %>%
-  separate(col = `RP1-2`, into = c("RP1", "RP2"), sep = ", ") %>%
-  separate(col = `BP2-3`, into = c("BP2", "BP3"), sep = ", ") %>%
-  separate(col = `BP4-5`, into = c("BP4", "BP5"), sep = ", ") 
-
-PickandBan_df_non_tidy <- PickandBan_df_non_tidy %>% 
-  rowid_to_column("ID") %>%
-  subset(select = c(ID,Phase:Score, BB1:RR5)) 
-#Only having an Winner DF
-Winner_df <- MatchHistory_nonTidy_df['Winner'] %>%
-  rowid_to_column("ID")
-
-#Tidying Picks Table----
-
-Picks_df_non_tidy <- PickandBan_df_non_tidy %>%
-  subset(select = -c(BB1:RB3,RB4:BB5))
-
-Picks_df <- Picks_df_non_tidy %>%
-  pivot_longer(cols = c(BP1:RP5),
-               names_to = "Side",
-               values_to = "Champions") %>%
-  pivot_longer(cols = c(BR1:RR5),
-               names_to = "Selection",
-               values_to = "Role")
-Picks_df$Side <-  gsub("P","R",Picks_df$Side)
-
-Picks_df <- Picks_df %>%
-  filter(Side == Selection) %>%
-  subset(select = c(Phase:Champions, Role, ID)) %>% 
-  separate(col = Side, into = c("Side", "Order"), sep = 2) 
-Picks_df$Side[Picks_df$Side == "RR"] <- "Red"
-Picks_df$Side[Picks_df$Side == "BR"] <- "Blue"
-
-Picks_df <- Picks_df %>%
-  pivot_longer(cols = c(Blue:Red),
-               names_to = "Color",
-               values_to = "Team") %>%
-  filter(Side == Color) %>%
-  subset(select = c(Phase:Role, Team, ID))
-#Edits to make Picks_df add winner in df 
-Picks_df <- full_join(Picks_df, Winner_df, by = 'ID')
-
-Picks_df$Winner <- Picks_df$Team == Picks_df$Winner
-
-Picks_df$Stage <- ifelse(grepl('^Day',Picks_df$Phase), "Group", "Knockout")
-Picks_df$Stage <- ifelse(grepl('^Tiebreakers',Picks_df$Phase),"Group",Picks_df$Stage) 
-  
-#Tidying bans table ----
-Bans_df_non_tidy <- PickandBan_df_non_tidy %>%
-  subset(select = c(ID,Phase:RB3,RB4:BB5))
-
-Bans_df <- Bans_df_non_tidy %>%
-  pivot_longer(cols = c(BB1:BB5),
-               names_to = "Side",
-               values_to = "Champions") %>%
-  separate(col = Side, into = c("Side", "Order"), sep = 2)
-
-Bans_df$Side[Bans_df$Side == "BB"] <- "Blue"
-
-Bans_df$Side[Bans_df$Side == "RB"] <- "Red"  
-
-Bans_df <- Bans_df %>%
-  pivot_longer(cols = c(Blue:Red),
-               names_to = "Color",
-               values_to = "Team") %>%
-  filter(Side == Color) %>%
-  subset(select = c(ID, Phase:Champions, Team))
-Bans_df <- full_join(Bans_df, Winner_df, by = 'ID')
-
-Bans_df$Winner <- Bans_df$Team == Bans_df$Winner
-Bans_df$Stage <- ifelse(grepl('^Day',Bans_df$Phase), "Group", "Knockout")
-Bans_df$Stage <- ifelse(grepl('^Tiebreakers',Bans_df$Phase),"Group",Bans_df$Stage) 
+#Source_Code_Dataframes brings the Picks_df and Bans_df that are going to be used in this R Markdown
+source("Source_Code_Dataframes.R")
 
 Favorite_theme  <- theme(axis.title = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -127,6 +21,7 @@ Favorite_theme  <- theme(axis.title = element_blank(),
 
 Team_Names_Axis <- scale_x_discrete(labels=c("FunPlus Phoenix" = "FPX", "G2 Esports" = "G2", "SK Telecom T1" = "SKT", "Invictus Gaming" = "IG","DAMWON Gaming" = "DWG", "Splyce" =  "SPY", "Fnatic" = "FNC", "Griffin" = "GRF", "Team Liquid" = "TL", "ahq eSports Club" = "AHQ","Royal Never Give Up" = "RNG", "Clutch Gaming" = "CG", "Hong Kong Attitude" = "HKA", "Cloud9" = "C9", "J Team" = "JT", "GAM Esports" = "GAM"))
 
+#Factors make it easy to add levels to variables!!
 Picks_df <- Picks_df %>%
   mutate(Phase=as.factor(Phase), Side=as.factor(Side),Order=as.factor(Order),
          Champions=as.factor(Champions), Role=as.factor(Role), Team=as.factor(Team))
@@ -134,17 +29,19 @@ Picks_df <- Picks_df %>%
 Bans_df %>%
     mutate(Phase=as.factor(Phase), Side=as.factor(Side),Order=as.factor(Order),
          Champions=as.factor(Champions), Team=as.factor(Team))
-#Counts of the champiions picked by team
+
+#Counts of the champions picked by team
 Team_count_df <- Picks_df %>%
-  group_by(Role, Team)%>% 
+  group_by(Role, Team)%>%
   count(Champions) %>%
   ungroup()%>%
-  count(Team) 
+  count(Team)
 #Count of champions picked by Role
 Picks_count_df <- Picks_df%>%
   group_by(Champions,Role)%>%
-  count(Champions) 
+  count(Champions)
 # I am categorizing common picks as a champion that was picked at least 3 times by one or more teams
+# Going to be using this data frame as a filter to only include champions that made it past these parameters
 Picks_common_df <- Picks_df%>%
   group_by(Champions,Role, Team)%>%
   count(Champions) %>%
@@ -156,29 +53,15 @@ Picks_common_df <- Picks_df%>%
 Picks_common_bot_df <- Picks_common_df %>%
   filter(Role == 'Bot Laner')
 
-Bans_count_df <- Bans_df  %>% 
+Bans_count_df <- Bans_df  %>%
     group_by(Champions)%>%
   count(Champions)
 
-Picks_bot_count_df<- Picks_count_df %>%  
-  filter(Role == 'Bot Laner') %>%
-  filter(n > 2)
-
-
 ```
 
-## GitHub Documents
+## Bot Lane Analysis
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
-
-## Including Code
-
-You can include R code in the document as follows:
-
-
-## Including Plots
-
-You can also embed plots, for example:
+Lets start out and see how many unique champions where picked by each Team
 
 ```{r echo=FALSE}
 Picks_df %>%
@@ -193,39 +76,54 @@ Picks_df %>%
        subtitle ="Number of top is the total champions picked by the team. The bar are separeted by color per role and legend is on the top right") +
   theme_minimal()+
   scale_y_continuous() +
-  Favorite_theme + 
+  Favorite_theme +
   Team_Names_Axis
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Bot Picks
+
+
 ```{r echo=FALSE}
+# Keeps champions that were picked 3 times or more
+Picks_bot_count_df<- Picks_count_df %>%  
+  filter(Role == 'Bot Laner') %>%
+  filter(n > 2)
 
 Picks_bot_count_df %>%
 ggplot(aes(x = Champions, y = n, fill = Champions))+
-  geom_bar(stat = 'identity') + 
+  geom_bar(stat = 'identity') +
   geom_text(aes(label = n),
             position = position_dodge(width = 1),
             vjust = -1)  
 ```
+# Common Bot lane picks
+Basically Kai'sa vs Xayah
+
 ```{r echo=FALSE}
 Picks_bot_count_df %>%
   filter(Champions %in% Picks_common_bot_df$Champions) %>%
   ggplot(aes(x = Champions, y = n, fill = Champions))+
-  geom_bar(stat = 'identity') + 
-  geom_text(aes(label = n),
-            position = position_dodge(width = 1),
-            vjust = -1) 
-```
-```{r, echo = FALSE}
-Bans_count_df %>%
-  filter(Champions %in% Picks_common_bot_df$Champions) %>%
-ggplot(aes(x = Champions, y = n, fill = Champions))+
-  geom_bar(stat = 'identity') + 
+  geom_bar(stat = 'identity') +
   geom_text(aes(label = n),
             position = position_dodge(width = 1),
             vjust = -1)
 ```
+Lets see if Bans reflect how often the champions were picked
+```{r, echo = FALSE}
+Bans_count_df %>%
+  filter(Champions %in% Picks_common_bot_df$Champions) %>%
+ggplot(aes(x = Champions, y = n, fill = Champions))+
+  geom_bar(stat = 'identity') +
+  geom_text(aes(label = n),
+            position = position_dodge(width = 1),
+            vjust = -1)
+```
+They do cause Kai'sai is more popular than Xayah but thats because Xayah is ban more often.
+There for Xayah is stronger?
+
+# Frequency of the picks between Groups and Knockout
+But did the frequency changed the group stage and the Knockout stage
 ```{r}
 Picks_df %>%
   group_by(Role, Stage) %>%
@@ -235,6 +133,7 @@ Picks_df %>%
   ggplot(mapping = aes(x = Champions, y = n, fill = Stage))+
   geom_bar(position = 'dodge', stat = 'identity')
 ```
+Nah but same thing could be said about bans too
 ```{r}
 Bans_df %>%
   group_by(Stage) %>%
@@ -243,7 +142,10 @@ Bans_df %>%
   ggplot(mapping = aes(x = Champions, y = n, fill = Stage))+
   geom_bar(position = 'dodge', stat = 'identity')
 ```
-```{r}
+# Looking throughout the Worlds 2019
+```{r warning=FALSE}
+Picks_popular_bot_df<- head(arrange(Picks_common_bot_df,desc(total)),n = 2)
+
 Picks_bot_phase_count<- Picks_df %>%
   group_by(Role, Phase) %>%
   filter(Champions %in% Picks_common_bot_df$Champions)%>%
@@ -262,11 +164,27 @@ Bans_bot_common_phase_count$Phase <- factor(Bans_bot_common_phase_count$Phase, l
                                                                                     'Tiebreakers','Quarterfinals',
                                                                                     'Semifinals','Finals'))
 
+Picks_bot_phase_count <- Picks_bot_phase_count%>%
+  left_join(Bans_bot_common_phase_count, by = c('Champions','Phase'))
+
+
+Picks_bot_phase_count[is.na(Picks_bot_phase_count)] <- 0
+
 Picks_bot_phase_count%>%
-  left_join(Bans_bot_common_phase_count, by = c('Champions','Phase')) %>%
-  ggplot(mapping = aes(x = Phase, color = Champions, group = Champions))+
-  geom_point(aes(y = n.x)) + 
-  geom_text(aes(label = Champions, y = n.x), 
-            position = position_dodge(width = 1),
-            vjust = -1)
+  filter(Champions %in% Picks_popular_bot_df$Champions)%>%
+  mutate(Pick_prio = n.x + n.y) %>%
+  ggplot(mapping = aes(x = Phase, y = Pick_prio, color = Champions, group = Champions))+
+  geom_line()+
+  geom_smooth(method = 'loess', se = FALSE, span = 0.6) +
+  theme_classic()
+  #stat_smooth(aes(y = n.x)) +
+  #geom_text(aes(label = Champions, y = n.x),
+   #         position = position_dodge(width = 1),
+    #        vjust = -1) +
+  #geom_point(aes(y = n.x, color = n.x)) +
+# geom_smooth(aes(y = n.x))+
+  #facet_grid(~Champions)
 ```
+So Kai'sa and Xayah always? Yup, I really do think that in terms of champion diversity riot failed when it came to Bot lane.
+
+# Champion changes before worlds 2019
