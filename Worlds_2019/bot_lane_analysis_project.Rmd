@@ -36,6 +36,13 @@ Team_count_df <- Picks_df %>%
   count(Champions) %>%
   ungroup()%>%
   count(Team)
+
+Team_count_bot_df <- Picks_df %>%
+  group_by(Role, Team)%>%
+  filter(Role == 'Bot Laner') %>% 
+  count(Champions) %>%
+  ungroup()%>%
+  count(Team)
 #Count of champions picked by Role
 Picks_count_df <- Picks_df%>%
   group_by(Champions,Role)%>%
@@ -63,7 +70,8 @@ Bans_count_df <- Bans_df  %>%
 
 Lets start out and see how many unique champions where picked by each Team
 
-```{r Unique Picks Per Team echo=FALSE}
+```{r echo=FALSE}
+# Unique Picks Per Team
 Picks_df %>%
   group_by(Role, Team)%>%
   count(Champions) %>%
@@ -80,14 +88,15 @@ Picks_df %>%
   Team_Names_Axis
 
 ```
-```{r Unique Bot Champions per Team echo = FALSE}
+```{r echo = FALSE}
+#Unique Bot Champions per Team 
 Picks_df %>%
   group_by(Role, Team)%>%
-  filter(Role == 'Bot Laner')
+  filter(Role == 'Bot Laner') %>%
   count(Champions) %>%
   ggplot()+
   geom_bar(mapping = aes(x = Team, fill = Role))   +
-  geom_text(data = Team_count_df, aes(x = Team, y = n,label = n),
+  geom_text(data = Team_count_bot_df, aes(x = Team, y = n,label = n),
             position = position_dodge(width = 1),
             vjust = -1) +
   labs(title = "Unique Bot Lane Champions Picked by Team") +
@@ -99,7 +108,8 @@ Picks_df %>%
 # Bot Picks
 
 
-```{r Bot Lane Champions Count echo=FALSE}
+```{r echo=FALSE}
+#Bot Lane Champions Count
 # Keeps champions that were picked 3 times or more
 Picks_bot_count_df<- Picks_count_df %>%  
   filter(Role == 'Bot Laner') %>%
