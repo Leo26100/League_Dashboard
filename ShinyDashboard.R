@@ -7,13 +7,7 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
-    ),
-
-    tabItem(tabName = "widgets",
-      h2("Widgets tab content")
     )
-  )
-)
 ui <- dashboardPage(
     dashboardHeader(title = 'Season 9 Worlds'),
     sidebar,
