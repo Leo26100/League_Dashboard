@@ -72,6 +72,7 @@ Lets start out and see how many unique champions where picked by each Team
 
 ```{r echo=FALSE}
 # Unique Picks Per Team
+Champions <- 145 
 Picks_df %>%
   group_by(Role, Team)%>%
   count(Champions) %>%
@@ -87,7 +88,11 @@ Picks_df %>%
   Favorite_theme +
   Team_Names_Axis
 
+Picks_df %>%
+  group_by(Role, Team) %>%
+  count(Champions)
 ```
+There are at total of 145 champions at the time worlds started with Qiyana being released
 ```{r echo = FALSE}
 #Unique Bot Champions per Team 
 Picks_df %>%
@@ -210,6 +215,3 @@ Picks_bot_phase_count%>%
 # geom_smooth(aes(y = n.x))+
   #facet_grid(~Champions)
 ```
-So Kai'sa and Xayah always? Yup, I really do think that in terms of champion diversity riot failed when it came to Bot lane.
-
-# Champion changes before worlds 2019

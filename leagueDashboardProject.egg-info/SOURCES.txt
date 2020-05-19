@@ -1,0 +1,5 @@
+setup.py
+leagueDashboardProject.egg-info/PKG-INFO
+leagueDashboardProject.egg-info/SOURCES.txt
+leagueDashboardProject.egg-info/dependency_links.txt
+leagueDashboardProject.egg-info/top_level.txt
