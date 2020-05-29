@@ -3,7 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from leagueDashboardProject.app import app
-from leagueDashboardProject.apps import appStandings
+from leagueDashboardProject.apps import appStandings, appPickBans
 
 app.layout = html.Div([
     
@@ -17,8 +17,8 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/':
         return appStandings.index_page
-    elif pathname == '/apps/test':
-        return "Does not exist"
+    elif pathname == '/apps/pickbans':
+        return appPickBans.layout
     else:
         return '404'
 

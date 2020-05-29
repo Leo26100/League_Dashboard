@@ -36,4 +36,18 @@ def layoutHistoricalPage(dict = layoutStandingsPage()):
     columns = ['Barons','Dragons','Gold','RiftHeralds','Kills']
     return default_historical, columns
 
-df = layoutHistoricalPage()[0]['North America']    
+
+def statsLayoutPage(dict = layoutStandingsPage()):
+    default_stats = {}
+    for keys in dict.keys():
+        default_stats[keys] = lp.statsDataFrames(dict[keys]['Event'][0])
+    return default_stats
+
+
+def searches():
+    regionSearchDic = lp.searches()['Regions']
+    playoffsSearchDic = lp.searches()['PlayOffs']
+    return regionSearchDic, playoffsSearchDic
+
+
+df = statsLayoutPage()

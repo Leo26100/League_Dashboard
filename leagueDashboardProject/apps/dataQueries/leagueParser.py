@@ -68,8 +68,8 @@ def defaultHistoricalStanding(tournament = None):
     try:            
         defaultHistoricalStanding = site.api('cargoquery',
                                                 limit = 'max',
-                                                tables = 'ScoreboardGame = SG',
-                                                fields = 'SG.Tournament, SG.Team1, SG.Team2, SG.WinTeam, SG.LossTeam,SG.Team1Score, SG.Team2Score, SG.Winner,SG.UniqueGame, SG.ScoreboardID_Wiki, SG.Gamename, SG.DateTime_UTC, SG.Team1Gold, SG.Team2Gold, SG.Team1Kills, SG.Team2Kills, SG.Team1RiftHeralds, SG.Team2RiftHeralds, SG.Team1Dragons, SG.Team2Dragons, SG.Team1Barons, SG.Team2Barons, SG.Team1Towers, SG.Team2Towers, SG.Team1Inhibitors, SG.Team2Inhibitors',
+                                                tables = 'ScoreboardGames = SG',
+                                                fields = 'SG.Tournament, SG.Team1, SG.Team2, SG.WinTeam, SG.LossTeam,SG.Team1Score, SG.Team2Score, SG.Winner,SG.UniqueGame, SG.ScoreboardID_Wiki, SG.Gamename, SG.DateTime_UTC, SG.Team1Gold, SG.Team2Gold, SG.Team1Kills, SG.Team2Kills, SG.Team1RiftHeralds, SG.Team2RiftHeralds, SG.Team1Dragons, SG.Team2Dragons, SG.Team1Barons, SG.Team2Barons, SG.Team1Towers, SG.Team2Towers, SG.Team1Inhibitors, SG.Team2Inhibitors, SG.Gamelength',
                                                 where = 'SG.Tournament="{}"'.format(tournament)
                                                 )        
     except TypeError:
@@ -78,11 +78,10 @@ def defaultHistoricalStanding(tournament = None):
         sys.exit(1)
     games = []
     for order_dic in defaultHistoricalStanding['cargoquery']:
-        for rows in order_dic:
-            row_dict = {}
-            for keys in order_dic['title'].keys():
-                row_dict.update({keys : order_dic['title'][keys]})
-            games.append(row_dict)
+        row_dict = {}
+        for keys in order_dic['title'].keys():
+            row_dict.update({keys : order_dic['title'][keys]})
+        games.append(row_dict)
     games_df = pd.DataFrame(games)
     games_df = pd.melt(games_df, id_vars = games_df.columns.difference(['Team1','Team2']),
                  value_vars=['Team1','Team2'], var_name = 'Side', value_name = "Team")
@@ -108,15 +107,35 @@ def defaultHistoricalStanding(tournament = None):
             games_df[convert_columns] = pd.to_numeric(games_df[convert_columns])    
     return games_df
 
-def statsDataFrames(tournament = None):
+def statsDataFrames(tournament = None): 
     try:
         statsQuery = site.api('cargoquery',
                                 limit = 'max',
-                                tables = 'PicksAndBansS7 = PB, MatchScheduleGame = MSG, ScoreboardGame = SG',
-                                fields = '',
-                                where = 'SG.Tournament="{}"'.format(tournament),
-                                join_on = 'PB.GameID_Wiki = MSG.GameID_Wiki, MSG.ScoreboardID_Wiki = SG.ScoreboardID_wiki'
+                                tables = 'PicksAndBansS7, MatchScheduleGame, ScoreboardGames',
+                                fields = 'PicksAndBansS7.Team1Role1, PicksAndBansS7.Team1Role2, PicksAndBansS7.Team1Role3, PicksAndBansS7.Team1Role4, PicksAndBansS7.Team1Role5, PicksAndBansS7.Team2Role1, PicksAndBansS7.Team2Role2, PicksAndBansS7.Team2Role3, PicksAndBansS7.Team2Role4, PicksAndBansS7.Team2Role5, PicksAndBansS7.Team1Ban1, PicksAndBansS7.Team1Ban2, PicksAndBansS7.Team1Ban3, PicksAndBansS7.Team1Ban4, PicksAndBansS7.Team1Ban5, PicksAndBansS7.Team1Pick1, PicksAndBansS7.Team1Pick2, PicksAndBansS7.Team1Pick3, PicksAndBansS7.Team1Pick4, PicksAndBansS7.Team1Pick5, PicksAndBansS7.Team2Ban1, PicksAndBansS7.Team2Ban2, PicksAndBansS7.Team2Ban3, PicksAndBansS7.Team2Ban4, PicksAndBansS7.Team2Ban5, PicksAndBansS7.Team2Pick1, PicksAndBansS7.Team2Pick2, PicksAndBansS7.Team2Pick3, PicksAndBansS7.Team2Pick4, PicksAndBansS7.Team2Pick5, PicksAndBansS7.Team1, PicksAndBansS7.Team2, PicksAndBansS7.Team1PicksByRoleOrder, PicksAndBansS7.Team2PicksByRoleOrder, MatchScheduleGame.Blue, MatchScheduleGame.Red, MatchScheduleGame.Winner, ScoreboardGames.Tournament, ScoreboardGames.Team1, ScoreboardGames.Team2, ScoreboardGames.Gamelength, ScoreboardGames.DateTime_UTC, ScoreboardGames.WinTeam, ScoreboardGames.LossTeam',
+                                where = 'ScoreboardGames.Tournament="{}"'.format(tournament),
+                                join_on = 'PicksAndBansS7.GameID_Wiki = MatchScheduleGame.GameID_Wiki, MatchScheduleGame.ScoreboardID_Wiki = ScoreboardGames.ScoreboardID_Wiki'
                                 )
 
     except TypeError:
-        print('Please Select a Tournament to look for')
+        print >> sys.stderr, 'Tournament Could not be found'
+        print >> sys.stderr, 'Please Pick another Tournament'
+        sys.exit(1)
+    games = []
+    for rows in statsQuery['cargoquery']:
+        statsQuery_dict = {}
+        for keys in rows['title'].keys():
+            statsQuery_dict.update({keys:rows['title'][keys]})
+        games.append(statsQuery_dict)
+    games_df = pd.DataFrame(games)
+    games_df = games_df.melt(id_vars=games_df.columns.difference(['Team1Ban1', 'Team1Ban2', 'Team1Ban3', 'Team1Ban4', 'Team1Ban5','Team1Pick1', 'Team1Pick2', 'Team1Pick3', 'Team1Pick4', 'Team1Pick5','Team2Ban1', 'Team2Ban2', 'Team2Ban3', 'Team2Ban4', 'Team2Ban5','Team2Pick1', 'Team2Pick2', 'Team2Pick3', 'Team2Pick4', 'Team2Pick5']), 
+        value_vars=['Team1Ban1', 'Team1Ban2', 'Team1Ban3', 'Team1Ban4', 'Team1Ban5','Team1Pick1', 'Team1Pick2', 'Team1Pick3', 'Team1Pick4', 'Team1Pick5','Team2Ban1', 'Team2Ban2', 'Team2Ban3', 'Team2Ban4', 'Team2Ban5','Team2Pick1', 'Team2Pick2','Team2Pick3', 'Team2Pick4', 'Team2Pick5'],
+        var_name='Picks',
+        value_name='Champions')
+    games_df = games_df.melt(id_vars=games_df.columns.difference(['Team1Role1,Team1Role2,Team1Role3,Team1Role4,Team1Role5,Team2Role1,Team2Role2,Team2Role3,Team2Role4,Team2Role5']), 
+    value_vars=['Team1Role1,Team1Role2,Team1Role3,Team1Role4,Team1Role5,Team2Role1,Team2Role2,Team2Role3,Team2Role4,Team2Role5'],
+    var_name= 'Role', 
+    value_name='Position')
+    return games_df
+
+    

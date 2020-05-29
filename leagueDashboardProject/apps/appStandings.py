@@ -10,6 +10,7 @@ from leagueDashboardProject.apps.dataQueries import layoutData
 
 historicalData = layoutData.layoutHistoricalPage()[0]
 standingsData = layoutData.layoutStandingsPage()
+pickBansTournament = layoutData.statsLayoutPage()
 
 index_page =  html.Div([
                 html.Div([
@@ -31,10 +32,12 @@ index_page =  html.Div([
                     ]),
 
                 dcc.Graph(id = 'region-graph'),
+                html.Br(),
+                html.Div(id = 'pickbans')
 ])
 @app.callback(
     dash.dependencies.Output('region-table','children'),
-    [dash.dependencies.Input(component_id='region', component_property='value')]
+    [dash.dependencies.Input('region','value')]
               )
 def update_table_output(region):
     standingsData_layout = standingsData[region]
@@ -57,5 +60,14 @@ def update_graph_output(region,x_axis):
         layout_title_text = 'Average "{}"'.format(x_axis)
     ) 
     return fig
-    
+
+@app.callback(dash.dependencies.Output('pickbans','children'),
+[dash.dependencies.Input('region','value')]
+)
+
+def update_pick_bans(region):
+    pickBansTable = pickBansTournament[region]
+    data = pickBansTable.to_dict('records')
+    columns = [{'name': i, 'id': i} for i in(pickBansTable.columns)]
+    return (tb.DataTable(data = data, columns = columns))
 
