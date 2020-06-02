@@ -132,10 +132,13 @@ def statsDataFrames(tournament = None):
         value_vars=['Team1Ban1', 'Team1Ban2', 'Team1Ban3', 'Team1Ban4', 'Team1Ban5','Team1Pick1', 'Team1Pick2', 'Team1Pick3', 'Team1Pick4', 'Team1Pick5','Team2Ban1', 'Team2Ban2', 'Team2Ban3', 'Team2Ban4', 'Team2Ban5','Team2Pick1', 'Team2Pick2','Team2Pick3', 'Team2Pick4', 'Team2Pick5'],
         var_name='Picks',
         value_name='Champions')
-    games_df = games_df.melt(id_vars=games_df.columns.difference(['Team1Role1,Team1Role2,Team1Role3,Team1Role4,Team1Role5,Team2Role1,Team2Role2,Team2Role3,Team2Role4,Team2Role5']), 
-    value_vars=['Team1Role1,Team1Role2,Team1Role3,Team1Role4,Team1Role5,Team2Role1,Team2Role2,Team2Role3,Team2Role4,Team2Role5'],
+    games_df = games_df.melt(id_vars=games_df.columns.difference(['Team1Role1','Team1Role2','Team1Role3','Team1Role4','Team1Role5','Team2Role1','Team2Role2','Team2Role3','Team2Role4','Team2Role5']), 
+    value_vars=['Team1Role1','Team1Role2','Team1Role3','Team1Role4','Team1Role5','Team2Role1','Team2Role2','Team2Role3','Team2Role4','Team2Role5'],
     var_name= 'Role', 
     value_name='Position')
+    games_df['Role'] = games_df['Role'].str.replace('Role','Pick', regex=False)
+    games_df['Column'] = np.where(games_df['Role']==games_df['Picks'], 'True', None)
+    games_df = games_df.dropna().drop(columns = ['Column'])
     return games_df
 
     

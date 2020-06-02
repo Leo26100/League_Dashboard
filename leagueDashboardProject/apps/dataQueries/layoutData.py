@@ -49,5 +49,4 @@ def searches():
     playoffsSearchDic = lp.searches()['PlayOffs']
     return regionSearchDic, playoffsSearchDic
 
-
 df = statsLayoutPage()
