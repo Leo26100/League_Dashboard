@@ -96,7 +96,4 @@ Picks_bot_phase_count%>%
   #facet_grid(~Champions)
 ```
 
-So Kai’sa and Xayah always? Yup, I really do think that in terms of
-champion diversity riot failed when it came to Bot lane.
-
-# Champion changes before worlds 2019
+This project has changed to make an overall dashboard for tournaments this will include international events having their own page. Therefore, this project is as a template for the dashboard and will be scrap once the dashboard is complate. 
