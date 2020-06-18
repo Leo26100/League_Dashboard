@@ -136,9 +136,11 @@ def statsDataFrames(tournament = None):
     value_vars=['Team1Role1','Team1Role2','Team1Role3','Team1Role4','Team1Role5','Team2Role1','Team2Role2','Team2Role3','Team2Role4','Team2Role5'],
     var_name= 'Role', 
     value_name='Position')
-    games_df['Role'] = games_df['Role'].str.replace('Role','Pick', regex=False)
-    games_df['Column'] = np.where(games_df['Role']==games_df['Picks'], 'True', None)
-    games_df = games_df.dropna().drop(columns = ['Column'])
+    #games_df['Role'] = games_df['Role'].str.replace('Role','Pick', regex=False)
+    #games_df['Column'] = np.where(games_df['Role']==games_df['Picks'], 'True', None)
+    #games_df = games_df.dropna().drop(columns = ['Column'])
+    #games_df = games_df.melt(id_vars=games_df.columns.difference(['Blue','Red']),  value)
+    #games_df['']
     return games_df
 
     
