@@ -30,16 +30,15 @@ def layoutStandingsPage():
 def layoutHistoricalPage(dict = layoutStandingsPage()):
     default_historical = {}
     for keys in dict.keys():
-        default_historical[keys] = lp.defaultHistoricalStanding(dict[keys]['Event'][0])
+        default_historical[keys] = lp.defaultHistoricalStanding(dict[keys]['Tournament'][0])
     columns = ['Barons','Dragons','Gold','RiftHeralds','Kills']
     return default_historical, columns
 
 
 def statsLayoutPage(dict = layoutStandingsPage()):
     default_stats = {}
-    print(dict)
     for keys in dict.keys():
-        default_stats[keys] = lp.statsDataFrames(dict[keys]['Event'][0])
+        default_stats[keys] = lp.statsDataFrames(dict[keys]['Tournament'][0])
     return default_stats
 
 
@@ -48,4 +47,3 @@ def searches():
     playoffsSearchDic = lp.searches()['PlayOffs']
     return regionSearchDic, playoffsSearchDic
 
-layoutStandingsPage()

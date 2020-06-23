@@ -36,30 +36,28 @@ def searches():
     return search_dictionary 
 
 def defaultStandings(tournament = None):
-    try: 
+    try:            
         defaultStanding = site.api('cargoquery',
-                                        limit = 'max',
-                                        tables = 'TournamentResults = TNR',
-                                        fields = "TNR.Event,TNR.Place_Number,TNR.Team,TNR.UniqueLine",
-                                        where = 'TNR.Event="{}"'.format(tournament)
-
-                                    )
-        standings = {}
-        teams = 0 
-        headers_standings = ['Event', 'Team', 'Place','UniqueLine']
-        for team in defaultStanding['cargoquery']:
-            standings[teams] = []
-            standings[teams].append(team['title']['Event'])
-            standings[teams].append(team['title']['Team'])
-            standings[teams].append(team['title']['Place Number'])
-            standings[teams].append(team['title']['UniqueLine'])
-            teams += 1
-        standings_df = pd.DataFrame.from_dict(standings, orient = 'index', columns = headers_standings)
-        return standings_df
+                                                limit = 'max',
+                                                tables = 'ScoreboardGames = SG',
+                                                fields = 'SG.Tournament, SG.Team1, SG.Team2, SG.Winner, SG.Team1Gold, SG.Team2Gold, SG.Gamelength_Number, SG.ScoreboardID_Wiki',
+                                                where = 'SG.Tournament="{}"'.format(tournament)
+                                                )        
     except TypeError:
-        print('Please Select the Tournament Standing you Would like to View')
-        pass
-    
+        print >> sys.stderr, 'Tournament Could not be found'
+        print >> sys.stderr, 'Please Pick another Tournament'
+        sys.exit(1)     
+    games = []
+    for dictionary in  defaultStanding['cargoquery']: 
+        row_dict = {}
+        for keys in dictionary['title'].keys():
+            row_dict.update({keys : dictionary['title'][keys]})
+        games.append(row_dict)
+    standings = pd.DataFrame(games)
+    standings.rename(columns={'Team1':'Blue', 'Team2':'Red','Team1Gold':'BlueGold','Team2Gold':'RedGold'}, inplace=True)
+    standings[['BlueGold','RedGold','Gamelength Number']] = standings[['BlueGold','RedGold','Gamelength Number']].apply(pd.to_numeric)
+    return standings
+
 def defaultHistoricalStanding(tournament = None):
     """
         Makes Historical Standing of regions

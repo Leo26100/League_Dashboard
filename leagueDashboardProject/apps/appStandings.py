@@ -41,8 +41,8 @@ index_page =  html.Div([
               )
 def update_table_output(region):
     standingsData_layout = standingsData[region]
-    tournament_title = standingsData_layout['Event'][0]
-    standingsData_layout = standingsData_layout.drop(columns=['Event','UniqueLine'])
+    tournament_title = standingsData_layout['Tournament'][0]
+    standingsData_layout = standingsData_layout.drop(columns=['Tournament'])
     data = standingsData_layout.to_dict('records')
     columns = [{'name': i, 'id': i} for i in(standingsData_layout.columns)]
     return (html.H1(tournament_title),
