@@ -6,6 +6,14 @@ This projected shifted from focusing on analyzing worlds data to create dashboar
 
 # Running the program and goals
 
+### Running the program
+
+```
+pip install -r requirements.txt
+python index.py
+
+```
+
 Right now it is incomplate but [prototype.pdf](https://github.com/Leo26100/League_Dashboard/blob/further-modifying-bot-lane/Prototype.pdf) shows a pdf of how the page looks like for right now.
 
 Next shift is tidying the data for Tournament. I would want this table to give real time results of the tournament with interesting stats. I envision the tale to have this type of format. 
