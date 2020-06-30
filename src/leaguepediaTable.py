@@ -148,6 +148,15 @@ class dataBaseConnector:
         else:
             scoreBoardData = {tournament: pd.DataFrame(self.query(tournament, table))}
         for keys, dataFrame in scoreBoardData.items():
+            dataFrame[["Team1Gold", "Team2Gold"]] = dataFrame[
+                ["Team1Gold", "Team2Gold"]
+            ].apply(pd.to_numeric)
+            dataFrame["Team1GoldDifference"] = (
+                dataFrame["Team1Gold"] - dataFrame["Team2Gold"]
+            )
+            dataFrame["Team2GoldDifference"] = (
+                dataFrame["Team2Gold"] - dataFrame["Team1Gold"]
+            )
             dataFrame = pd.melt(
                 dataFrame,
                 id_vars=dataFrame.columns.difference(["Team1", "Team2"]),
@@ -168,6 +177,7 @@ class dataBaseConnector:
                     ["Team1RiftHeralds", "Team2RiftHeralds"],
                     ["Team1Score", "Team2Score"],
                     ["Team1Towers", "Team2Towers"],
+                    ["Team1GoldDifference", "Team2GoldDifference"],
                 ],
                 [
                     "SideBarons",
@@ -178,6 +188,7 @@ class dataBaseConnector:
                     "SideRiftHeralds",
                     "SideScore",
                     "SideTowers",
+                    "SideGoldDifference",
                 ],
                 [
                     "Barons",
@@ -188,6 +199,7 @@ class dataBaseConnector:
                     "RiftHeralds",
                     "Score",
                     "Towers",
+                    "GoldDifference",
                 ],
             )
             dataFrame["Side"] = dataFrame["Side"].map({"Team1": "Blue", "Team2": "Red"})
@@ -197,8 +209,6 @@ class dataBaseConnector:
             )
             del dataFrame["DateTime UTC__precision"]
             dataFrame = dataFrame.sort_values(by=["DateTime UTC"])
-            dataFrame = dataFrame.reset_index()
-            del dataFrame["index"]
             dataFrame[
                 [
                     "Barons",
@@ -209,6 +219,7 @@ class dataBaseConnector:
                     "Kills",
                     "RiftHeralds",
                     "Towers",
+                    'Won'
                 ]
             ] = dataFrame[
                 [
@@ -220,6 +231,7 @@ class dataBaseConnector:
                     "Kills",
                     "RiftHeralds",
                     "Towers",
+                    'Won'
                 ]
             ].apply(
                 pd.to_numeric
