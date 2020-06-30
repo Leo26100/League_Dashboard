@@ -70,6 +70,7 @@ def update_table_output(region):
         .sort_values(by=["Won"], ascending=False)
         .round(2)
     )
+    standingsData_layout['Standings'] = standingsData_layout['Won'].rank(ascending = 0, method = 'first')
     data = standingsData_layout.to_dict("records")
     columns = [{"name": i, "id": i} for i in (standingsData_layout.columns)]
     return (
