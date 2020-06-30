@@ -1,9 +1,9 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+
 from src import appPickBans, appStandings
 from src.app import app
-
 
 print(dcc.__version__)  # 0.6.0 or above is required
 
