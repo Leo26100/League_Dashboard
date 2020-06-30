@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 from src import leaguepediaTable
 from src.app import app
 
-
 dataBaseConnector = leaguepediaTable.dataBaseConnector()
 pickBansData = dataBaseConnector.pickAndBansTable()
 
