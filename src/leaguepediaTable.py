@@ -148,15 +148,28 @@ class dataBaseConnector:
         else:
             scoreBoardData = {tournament: pd.DataFrame(self.query(tournament, table))}
         for keys, dataFrame in scoreBoardData.items():
-            dataFrame[["Team1Gold", "Team2Gold"]] = dataFrame[
-                ["Team1Gold", "Team2Gold"]
-            ].apply(pd.to_numeric)
+            columns = [
+                "Team1Gold",
+                "Team2Gold",
+                "Team1Kills",
+                "Team2Kills",
+            ]
+            dataFrame[columns] = dataFrame[columns].apply(pd.to_numeric)
             dataFrame["Team1GoldDifference"] = (
                 dataFrame["Team1Gold"] - dataFrame["Team2Gold"]
             )
             dataFrame["Team2GoldDifference"] = (
                 dataFrame["Team2Gold"] - dataFrame["Team1Gold"]
             )
+
+            dataFrame["Team1KillsDifference"] = (
+                dataFrame["Team1Kills"] - dataFrame["Team2Kills"]
+            )
+
+            dataFrame["Team2KillsDifference"] = (
+                dataFrame["Team2Kills"] - dataFrame["Team1Kills"]
+            )
+
             dataFrame = pd.melt(
                 dataFrame,
                 id_vars=dataFrame.columns.difference(["Team1", "Team2"]),
@@ -178,6 +191,7 @@ class dataBaseConnector:
                     ["Team1Score", "Team2Score"],
                     ["Team1Towers", "Team2Towers"],
                     ["Team1GoldDifference", "Team2GoldDifference"],
+                    ["Team1KillsDifference", "Team2KillsDifference"],
                 ],
                 [
                     "SideBarons",
@@ -189,6 +203,7 @@ class dataBaseConnector:
                     "SideScore",
                     "SideTowers",
                     "SideGoldDifference",
+                    "SideKillsDifference",
                 ],
                 [
                     "Barons",
@@ -200,6 +215,7 @@ class dataBaseConnector:
                     "Score",
                     "Towers",
                     "GoldDifference",
+                    "KillsDifference",
                 ],
             )
             dataFrame["Side"] = dataFrame["Side"].map({"Team1": "Blue", "Team2": "Red"})
@@ -219,7 +235,7 @@ class dataBaseConnector:
                     "Kills",
                     "RiftHeralds",
                     "Towers",
-                    'Won'
+                    "Won",
                 ]
             ] = dataFrame[
                 [
@@ -231,7 +247,7 @@ class dataBaseConnector:
                     "Kills",
                     "RiftHeralds",
                     "Towers",
-                    'Won'
+                    "Won",
                 ]
             ].apply(
                 pd.to_numeric
