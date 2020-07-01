@@ -4,6 +4,7 @@ import dash_html_components as html
 import dash_table as tb
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 
 from src import leaguepediaTable
 from src.app import app
@@ -19,6 +20,8 @@ graphHeaders = [
     "Kills",
     "RiftHeralds",
     "Towers",
+    "GoldDifference",
+    "KillsDifference",
 ]
 pickBansData = dataBaseConnector.pickAndBansTable()
 
@@ -39,18 +42,20 @@ index_page = html.Div(
         ),
         html.Br(),
         html.Div(id="region-table"),
-        # html.Div(
-        #     [
-        #         dcc.Dropdown(
-        #             id="axis",
-        #             options=[{"label": i, "value": i} for i in graphHeaders],
-        #             value="Gold",
-        #         )
-        #     ]
-        # ),
-        # dcc.Graph(id="region-graph"),
         html.Br(),
-        # html.Div(id="pickbans"),
+        html.Div(
+            [
+                dcc.Dropdown(
+                    id="axis",
+                    options=[{"label": i, "value": i} for i in graphHeaders],
+                    value="Won",
+                )
+            ]
+        ),
+        html.Br(),
+        dcc.Graph(id="region-graph"),
+        html.Br(),
+        html.Div(id="pickbans"),
     ]
 )
 
@@ -67,10 +72,12 @@ def update_table_output(region):
         standingsData_layout.groupby(["Team"])
         .mean()
         .reset_index()
-        .sort_values(by=["Won"], ascending=False)
+        .sort_values(by=["Won", "GoldDifference"], ascending=[False, False])
         .round(2)
     )
-    standingsData_layout['Standings'] = standingsData_layout['Won'].rank(ascending = 0, method = 'first')
+    standingsData_layout["Standings"] = standingsData_layout["Won"].rank(
+        ascending=0, method="first"
+    )
     data = standingsData_layout.to_dict("records")
     columns = [{"name": i, "id": i} for i in (standingsData_layout.columns)]
     return (
@@ -83,14 +90,14 @@ def update_table_output(region):
             style_cell_conditional=[{"if": {"column_id": "Team"}, "textAlign": "left"}],
             style_data_conditional=[
                 {
-                    "if": {"filter_query": "{Won} < 0.5", "column_id": "Won"},
-                    "backgroundColor": "tomato",
-                    "color": "back",
-                },
-                {
                     "if": {"row_index": "odd"},
                     "background": "rgb(248,248,248)",
                     "fontWeight": "bold",
+                },
+                {
+                    "if": {"filter_query": "{Won} < 0.5", "column_id": "Won"},
+                    "backgroundColor": "tomato",
+                    "color": "back",
                 },
             ],
             style_header={
@@ -101,32 +108,55 @@ def update_table_output(region):
     )
 
 
-# @app.callback(
-#     dash.dependencies.Output("region-graph", "figure"),
-#     [
-#         dash.dependencies.Input("region", "value"),
-#         dash.dependencies.Input("axis", "value"),
-#     ],
-# )
-# def update_graph_output(region, axis):
-#     standingsDataGraph = standingsData[region]
-#     standingsDataGraph = standingsDataGraph.groupby(["Team"]).mean()
-#     fig = go.Figure(
-#         data=[go.Bar(y=standingsDataGraph[axis], x=standingsDataGraph.index.values)],
-#         layout_title_text='Average "{}"'.format(axis),
-#     )
-#     return fig
+@app.callback(
+    dash.dependencies.Output("region-graph", "figure"),
+    [
+        dash.dependencies.Input("region", "value"),
+        dash.dependencies.Input("axis", "value"),
+    ],
+)
+def update_graph_output(region, axis):
+    standingsDataGraph = standingsData[region]
+    standingsDataGraph = standingsDataGraph.groupby(["Team"]).mean().round(2)
+    standingsDataGraphTeam1 = standingsDataGraph.sort_values(by="Won", ascending=False)
+    standingsDataGraphTeam1["Standings"] = standingsDataGraphTeam1["Won"].rank(
+        ascending=0, method="first"
+    )
+    standingsDataGraphTeam1 = standingsDataGraphTeam1[
+        standingsDataGraphTeam1.Standings.eq(1)
+    ]
+    fig = px.scatter(
+        standingsDataGraph,
+        y=standingsDataGraph["Won"],
+        x=standingsDataGraph[axis],
+        color=list(standingsDataGraph.index.values),
+    )
+    fig.update_traces(marker_size=30)
+    # fig = go.Figure(
+    #     data=[
+    #         go.Scatter(
+    #             name="Team",
+    #             y=standingsDataGraph["Won"],
+    #             x=standingsDataGraph[axis],
+    #             mode="markers",
+    #             marker=dict(color=list(standingsDataGraph.index.values),),
+    #         ),
+    #     ],
+    #     layout_title_text='Average "{}"'.format(axis),
+    # )
+
+    return fig
 
 
-# @app.callback(
-#     dash.dependencies.Output("pickbans", "children"),
-#     [dash.dependencies.Input("region", "value")],
-# )
-# def update_pick_bans(region):
-#     pickBansTable = pickBansData[region]
-#     data = pickBansTable.to_dict("records")
-#     columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
-#     return tb.DataTable(data=data, columns=columns)
+@app.callback(
+    dash.dependencies.Output("pickbans", "children"),
+    [dash.dependencies.Input("region", "value")],
+)
+def update_pick_bans(region):
+    pickBansTable = pickBansData[region]
+    data = pickBansTable.to_dict("records")
+    columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
+    return tb.DataTable(data=data, columns=columns)
 
 
 if __name__ == "__main__":
