@@ -55,7 +55,7 @@ index_page = html.Div(
         html.Br(),
         dcc.Graph(id="region-graph"),
         html.Br(),
-        html.Div(id="pickbans"),
+        # html.Div(id="pickbans"),
     ]
 )
 
@@ -148,15 +148,15 @@ def update_graph_output(region, axis):
     return fig
 
 
-@app.callback(
-    dash.dependencies.Output("pickbans", "children"),
-    [dash.dependencies.Input("region", "value")],
-)
-def update_pick_bans(region):
-    pickBansTable = pickBansData[region]
-    data = pickBansTable.to_dict("records")
-    columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
-    return tb.DataTable(data=data, columns=columns)
+# @app.callback(
+#     dash.dependencies.Output("pickbans", "children"),
+#     [dash.dependencies.Input("region", "value")],
+# )
+# def update_pick_bans(region):
+#     pickBansTable = pickBansData[region]
+#     data = pickBansTable.to_dict("records")
+#     columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
+#     return tb.DataTable(data=data, columns=columns)
 
 
 if __name__ == "__main__":
