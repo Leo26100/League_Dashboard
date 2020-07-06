@@ -23,7 +23,7 @@ layout = html.Div(
                         {"label": r, "value": r}
                         for r in sorted(list(pickBansData.keys()))
                     ],
-                    value="North America",
+                    value="LCS 2020 Summer",
                 ),
             ]
         ),
