@@ -1,6 +1,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 import dash_table as tb
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,52 +11,51 @@ from src import leaguepediaTable
 from src.app import app
 
 dataBaseConnector = leaguepediaTable.dataBaseConnector()
-standingsData = dataBaseConnector.scoreBoardTable()
-graphHeaders = [
-    "Barons",
-    "Dragons",
-    "Gamelength Number",
-    "Gold",
-    "Inhibitors",
-    "Kills",
-    "RiftHeralds",
-    "Towers",
-    "GoldDifference",
-    "KillsDifference",
-]
+standingsData = dataBaseConnector.scoreBoardTable()[0]
+graphHeaders = dataBaseConnector.scoreBoardTable()[1]
 pickBansData = dataBaseConnector.pickAndBansTable()
 
 index_page = html.Div(
     [
-        html.Div(
+        dbc.Row(
             [
-                html.Label("Region :"),
-                dcc.Dropdown(
-                    id="region",
-                    options=[
-                        {"label": r, "value": r}
-                        for r in sorted(list(standingsData.keys()))
+                dbc.Col(
+                    md=6,
+                    children=[
+                        html.Br(),
+                        html.H4("Current Main Regions Tournanments:"),
+                        html.Br(),
+                        dcc.Dropdown(
+                            id="region",
+                            options=[
+                                {"label": r, "value": r}
+                                for r in sorted(list(standingsData.keys()))
+                            ],
+                            value="LCS 2020 Summer",
+                        ),
+                        html.Br(),
+                        html.Div(id="region-table"),
                     ],
-                    value="LCS 2020 Summer",
+                ),
+                dbc.Col(
+                    md=6,
+                    children=[
+                        html.Br(),
+                        html.H4("Tournament Stats Graphs:"),
+                        html.Br(),
+                        dcc.Dropdown(
+                            id="axis",
+                            options=[{"label": i, "value": i} for i in graphHeaders],
+                            value="Team",
+                        ),
+                        html.Br(),
+                        dcc.Graph(id="region-graph"),
+                        html.Br(),
+                    ],
                 ),
             ]
         ),
-        html.Br(),
-        html.Div(id="region-table"),
-        html.Br(),
-        html.Div(
-            [
-                dcc.Dropdown(
-                    id="axis",
-                    options=[{"label": i, "value": i} for i in graphHeaders],
-                    value="Won",
-                )
-            ]
-        ),
-        html.Br(),
-        dcc.Graph(id="region-graph"),
-        html.Br(),
-        # html.Div(id="pickbans"),
+        dbc.Row([html.Div(id="pickbans"),]),
     ]
 )
 
@@ -66,18 +66,8 @@ index_page = html.Div(
 )
 def update_table_output(region):
     standingsData_layout = standingsData[region]
-    tournament_title = standingsData_layout["Tournament"][0]
-    # standingsData_layout = standingsData_layout.drop(columns=["Tournament"])
-    standingsData_layout = (
-        standingsData_layout.groupby(["Team"])
-        .mean()
-        .reset_index()
-        .sort_values(by=["Won", "GoldDifference"], ascending=[False, False])
-        .round(2)
-    )
-    standingsData_layout["Standings"] = standingsData_layout["Won"].rank(
-        ascending=0, method="first"
-    )
+    tournament_title = (region,)
+    standingsData_layout = standingsData_layout[["Rankings", "Team", "Won"]]
     data = standingsData_layout.to_dict("records")
     columns = [{"name": i, "id": i} for i in (standingsData_layout.columns)]
     return (
@@ -86,7 +76,7 @@ def update_table_output(region):
             data=data,
             columns=columns,
             sort_action="native",
-            style_cell={"textAlign": "right"},
+            style_cell={"textAlign": "right",},
             style_cell_conditional=[{"if": {"column_id": "Team"}, "textAlign": "left"}],
             style_data_conditional=[
                 {
@@ -117,46 +107,26 @@ def update_table_output(region):
 )
 def update_graph_output(region, axis):
     standingsDataGraph = standingsData[region]
-    standingsDataGraph = standingsDataGraph.groupby(["Team"]).mean().round(2)
-    standingsDataGraphTeam1 = standingsDataGraph.sort_values(by="Won", ascending=False)
-    standingsDataGraphTeam1["Standings"] = standingsDataGraphTeam1["Won"].rank(
-        ascending=0, method="first"
-    )
-    standingsDataGraphTeam1 = standingsDataGraphTeam1[
-        standingsDataGraphTeam1.Standings.eq(1)
-    ]
     fig = px.scatter(
         standingsDataGraph,
         y=standingsDataGraph["Won"],
         x=standingsDataGraph[axis],
-        color=list(standingsDataGraph.index.values),
+        color=standingsDataGraph["Team"],
     )
-    fig.update_traces(marker_size=30)
-    # fig = go.Figure(
-    #     data=[
-    #         go.Scatter(
-    #             name="Team",
-    #             y=standingsDataGraph["Won"],
-    #             x=standingsDataGraph[axis],
-    #             mode="markers",
-    #             marker=dict(color=list(standingsDataGraph.index.values),),
-    #         ),
-    #     ],
-    #     layout_title_text='Average "{}"'.format(axis),
-    # )
-
+    fig.update_traces(marker_size=30, marker={"opacity": 0.4})
+    fig.update_layout(title_text="Average {} per Game".format(axis), title_font_size=30)
     return fig
 
 
-# @app.callback(
-#     dash.dependencies.Output("pickbans", "children"),
-#     [dash.dependencies.Input("region", "value")],
-# )
-# def update_pick_bans(region):
-#     pickBansTable = pickBansData[region]
-#     data = pickBansTable.to_dict("records")
-#     columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
-#     return tb.DataTable(data=data, columns=columns)
+@app.callback(
+    dash.dependencies.Output("pickbans", "children"),
+    [dash.dependencies.Input("region", "value")],
+)
+def update_pick_bans(region):
+    pickBansTable = pickBansData[region]
+    data = pickBansTable.to_dict("records")
+    columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
+    return tb.DataTable(data=data, columns=columns)
 
 
 if __name__ == "__main__":
