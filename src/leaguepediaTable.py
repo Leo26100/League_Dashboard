@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-class dataBaseConnector:
+class dataBaseConnector(object):
     def __init__(self,):
         self.site = mwclient.Site("lol.gamepedia.com", path="/")
         self.date = datetime.date(datetime.now())
@@ -252,10 +252,20 @@ class dataBaseConnector:
             ].apply(
                 pd.to_numeric
             )
+            dataFrame = (
+                dataFrame.groupby(["Team"])
+                .mean()
+                .reset_index()
+                .sort_values(by=["Won", "GoldDifference"], ascending=[False, False])
+                .round(2)
+            )
+            dataFrame["Rankings"] = dataFrame["Won"].rank(ascending=0, method="first")
             scoreBoardData[keys] = dataFrame
-        return scoreBoardData
+            scoreBoardColumns = dataFrame.columns
+        return scoreBoardData, scoreBoardColumns
 
-    def superMelt(self, dataFrame, idVariables, mergeValues, variableNames, valueNames):
+    @staticmethod
+    def superMelt(dataFrame, idVariables, mergeValues, variableNames, valueNames):
         for num, columns in enumerate(mergeValues, start=0):
             dataFrame = pd.melt(
                 dataFrame,
