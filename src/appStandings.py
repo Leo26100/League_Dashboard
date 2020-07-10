@@ -1,11 +1,11 @@
 import dash
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_bootstrap_components as dbc
 import dash_table as tb
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
 
 from src import leaguepediaTable
 from src.app import app
@@ -55,7 +55,9 @@ index_page = html.Div(
                 ),
             ]
         ),
-        dbc.Row([html.Div(id="pickbans"),]),
+        dbc.Row(
+            dbc.Col([dcc.Graph(id="pickbans"),],)
+        ),  # width={"Size": 6, "offset": 3}
     ]
 )
 
@@ -119,14 +121,22 @@ def update_graph_output(region, axis):
 
 
 @app.callback(
-    dash.dependencies.Output("pickbans", "children"),
+    dash.dependencies.Output("pickbans", "figure"),
     [dash.dependencies.Input("region", "value")],
 )
 def update_pick_bans(region):
-    pickBansTable = pickBansData[region]
-    data = pickBansTable.to_dict("records")
-    columns = [{"name": i, "id": i} for i in (pickBansTable.columns)]
-    return tb.DataTable(data=data, columns=columns)
+    picks_df = pickBansData[region][0]
+    bans_df = pickBansData[region][1]
+    data = bans_df.to_dict("records")
+    columns = [{"name": i, "id": i} for i in (bans_df.columns)]
+    # fig = go.Figure(data=[go.Histogram(y=bans_df["Champions"])])
+    fig_bans = px.histogram(
+        bans_df, y="Champions", color="Picks", hover_data=bans_df.columns,
+    )
+    fig_picks = px.histogram(
+        picks_df, y="Champions", color="Position", hover_data=picks_df.columns,
+    )
+    return fig_picks  # tb.DataTable(data=data, columns=columns),
 
 
 if __name__ == "__main__":
