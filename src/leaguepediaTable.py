@@ -105,6 +105,9 @@ class dataBaseConnector(object):
                 var_name="Picks",
                 value_name="Champions",
             )
+            dataFrame["Bans"] = dataFrame["Picks"].str.contains("Ban")
+            pickBansDf = dataFrame[dataFrame["Bans"] == True]
+            dataFrame = dataFrame[dataFrame["Bans"] == False]
             dataFrame = dataFrame.melt(
                 id_vars=dataFrame.columns.difference(
                     [
@@ -135,7 +138,10 @@ class dataBaseConnector(object):
                 var_name="Role",
                 value_name="Position",
             )
-            pickBansTable[keys] = dataFrame
+            dataFrame.drop("Bans", axis=1, inplace=True)
+            pickBansDf = self.tidytable(pickBansDf)
+            dataFrame = self.tidytable(dataFrame)
+            pickBansTable[keys] = [dataFrame, pickBansDf]
         return pickBansTable
 
     def scoreBoardTable(self, tournament=None, table="Scoreboard"):
@@ -220,9 +226,7 @@ class dataBaseConnector(object):
             )
             dataFrame["Side"] = dataFrame["Side"].map({"Team1": "Blue", "Team2": "Red"})
             dataFrame["Winner"] = np.where(dataFrame["Winner"] == "1", "Blue", "Red")
-            dataFrame["Won"] = np.where(
-                dataFrame["Side"] == dataFrame["Winner"], "1", "0"
-            )
+            dataFrame["Won"] = np.where(dataFrame["Side"] == dataFrame["Winner"], 1, 0)
             del dataFrame["DateTime UTC__precision"]
             dataFrame = dataFrame.sort_values(by=["DateTime UTC"])
             dataFrame[
@@ -235,7 +239,6 @@ class dataBaseConnector(object):
                     "Kills",
                     "RiftHeralds",
                     "Towers",
-                    "Won",
                 ]
             ] = dataFrame[
                 [
@@ -247,7 +250,6 @@ class dataBaseConnector(object):
                     "Kills",
                     "RiftHeralds",
                     "Towers",
-                    "Won",
                 ]
             ].apply(
                 pd.to_numeric
@@ -265,21 +267,79 @@ class dataBaseConnector(object):
         return scoreBoardData, scoreBoardColumns
 
     @staticmethod
-    def superMelt(dataFrame, idVariables, mergeValues, variableNames, valueNames):
+    def superMelt(df, idVariables, mergeValues, variableNames, valueNames):
         for num, columns in enumerate(mergeValues, start=0):
-            dataFrame = pd.melt(
-                dataFrame,
-                id_vars=dataFrame.columns.difference(columns),
+            df = pd.melt(
+                df,
+                id_vars=df.columns.difference(columns),
                 value_vars=columns,
                 var_name=variableNames[num],
                 value_name=valueNames[num],
             )
-            stringPattern = re.split("Team.", dataFrame[variableNames[num]][0])[1]
-            dataFrame[variableNames[num]] = dataFrame[variableNames[num]].str.replace(
+            stringPattern = re.split("Team.", df[variableNames[num]][0])[1]
+            df[variableNames[num]] = df[variableNames[num]].str.replace(
                 stringPattern, ""
             )
-            dataFrame["Column"] = np.where(
-                dataFrame[variableNames[num]] == dataFrame["Side"], "True", None
-            )
-            dataFrame = dataFrame.dropna().drop(columns=[variableNames[num], "Column"])
-        return dataFrame
+            df["Column"] = np.where(df[variableNames[num]] == df["Side"], "True", None)
+            df = df.dropna().drop(columns=[variableNames[num], "Column"])
+        return df
+
+    @staticmethod
+    def tidytable(df):
+        if "Bans" not in list(df.columns):
+            df["Roleclean up"] = df.Role.str[:5] == df.Picks.str[:5]
+            df = df[df["Roleclean up"] == True]
+            df["Positionclean"] = df.Role.str[9] == df.Picks.str[9]
+            df = df[df["Positionclean"] == True]
+        df = df.melt(
+            id_vars=df.columns.difference(["Team1", "Team2"]),
+            value_vars=["Team1", "Team2"],
+            var_name="Side Selection",
+            value_name="Team",
+        )
+        df["Side"] = df.Picks.str[:5]
+        df["Side"] = np.where(df["Side Selection"] == df["Side"], True, False)
+        df = df[df["Side"] == True]
+        df["Side Selection"] = df["Side Selection"].map(
+            {"Team1": "Blue", "Team2": "Red"}
+        )
+        df = df.melt(
+            id_vars=df.columns.difference(["Blue", "Red"]),
+            value_vars=["Blue", "Red"],
+            var_name=["Side Cleanup"],
+            value_name="Team Againts",
+        )
+        df["Side"] = np.where(df["Side Selection"] != df["Side Cleanup"], True, False)
+        df = df[df["Side"] == True]
+        df["Winner"] = df["Winner"].map({"1": "Blue", "2": "Red"})
+        df["Won"] = np.where(df["Side Selection"] == df["Winner"], 1, 0)
+        if "Bans" not in list(df.columns):
+            df["Picks"] = df["Picks"].str.replace("Team.Pick", "")
+            df = df[
+                [
+                    "Side Selection",
+                    "Team",
+                    "DateTime UTC",
+                    "Picks",
+                    "Champions",
+                    "Position",
+                    "Won",
+                    "Team Againts",
+                ]
+            ]
+        else:
+            df["Picks"] = df["Picks"].str.replace("Team.Ban", "")
+            df = df[
+                [
+                    "Side Selection",
+                    "Team",
+                    "DateTime UTC",
+                    "Picks",
+                    "Champions",
+                    "Won",
+                    "Team Againts",
+                ]
+            ]
+        df["Picks"] = df["Picks"].apply(pd.to_numeric)
+        return df
+
