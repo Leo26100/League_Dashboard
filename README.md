@@ -20,14 +20,14 @@ python index.py
 Here's an image of how it looks like right now  ![image](/docs/Prototype.png "Prototype") 
 
 Right now the main page shows the four main regions and the following information
-1. Standings for the torunament with the win rate
+1. Standings for the tournament with the win rate
 2. Graph with usual information regarding multiple things like Gold, Gold Difference, Dragons, Barons, Kills, ect. 
-3. Table of the picks and bans for the tournament
+3. Histogram of the picks of this tournament
 
 I want to make the following changes
++ Align the histograms of bans and picks together and add title and caption 
 + Change name for columns and graph axis
 + Add a rating system for the teams
-+ Make the picks and bans table into a graph 
 + Do the same for the other regions and international events/ playoffs
 
 
