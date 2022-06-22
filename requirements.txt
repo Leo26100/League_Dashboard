@@ -27,7 +27,7 @@ mccabe==0.6.1
 mwclient==0.10.1
 -e git+https://github.com/Leo26100/League_Dashboard.git@13d1be80087c32f1cec41cd4560fb3f527bf69b4#egg=myproject
 numba==0.50.1
-numpy==1.19.0
+numpy==1.22.0
 oauthlib==3.1.0
 pandas==1.0.5
 pathspec==0.8.0
